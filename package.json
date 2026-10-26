@@ -1,0 +1,9 @@
+{
+  "name": "hello-devops",
+  "version": "1.0.0",
+  "main": "app/server.js",
+  "scripts": {
+    "start": "node app/server.js",
+    "test": "node --test app/server.test.js"
+  }
+}

@@ -82,4 +82,3 @@ docker compose -f docker-compose.monitoring.yml up -d
 
 ## الدورة تتكرر
 ما تراه في المراقبة يتحول إلى Issue جديد في التخطيط، وهكذا تكتمل حلقة DevOps.
-# Devops

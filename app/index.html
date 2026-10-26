@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hello DevOps</title>
+<style>
+  :root { --bg:#0f172a; --card:#1e293b; --text:#e2e8f0; --muted:#94a3b8; --accent:#38bdf8; --ok:#4ade80; --bad:#f87171; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:system-ui,"Segoe UI",Tahoma,sans-serif; background:var(--bg); color:var(--text); line-height:1.6; }
+  main { max-width:860px; margin:0 auto; padding:32px 16px 48px; }
+  h1 { margin:0 0 4px; font-size:28px; }
+  .sub { color:var(--muted); margin:0 0 24px; }
+  .status { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:28px; }
+  .stat { background:var(--card); border-radius:10px; padding:14px; }
+  .stat b { display:block; font-size:20px; color:var(--accent); word-break:break-all; }
+  .stat span { color:var(--muted); font-size:13px; }
+  .ok { color:var(--ok) !important; } .bad { color:var(--bad) !important; }
+  .stages { display:grid; gap:10px; padding:0; margin:0; list-style:none; counter-reset:s; }
+  .stages li { background:var(--card); border-radius:10px; padding:14px 16px 14px 14px; display:flex; gap:12px; align-items:flex-start; counter-increment:s; }
+  .stages li::before { content:counter(s); flex:none; width:28px; height:28px; border-radius:50%; background:var(--accent); color:var(--bg); font-weight:700; display:grid; place-items:center; }
+  .stages strong { display:block; }
+  .stages small { color:var(--muted); }
+  code { direction:ltr; unicode-bidi:embed; background:#0b1220; padding:1px 6px; border-radius:4px; font-size:13px; }
+  footer { margin-top:28px; color:var(--muted); font-size:13px; }
+  a { color:var(--accent); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Hello DevOps</h1>
+  <p class="sub">موقع صغير يمرّ على مراحل DevOps كلها، وهذه الصفحة نفسها هي الناتج النهائي لخط الإنتاج.</p>
+
+  <section class="status" aria-label="الحالة الحية">
+    <div class="stat"><span>الصحة</span><b id="health">...</b></div>
+    <div class="stat"><span>الإصدار</span><b id="version">...</b></div>
+    <div class="stat"><span>اسم الـ Pod / الخادم</span><b id="host">...</b></div>
+    <div class="stat"><span>مدة التشغيل (ث)</span><b id="uptime">...</b></div>
+    <div class="stat"><span>عدد الزيارات</span><b id="reqs">...</b></div>
+  </section>
+
+  <ol class="stages">
+    <li><div><strong>التخطيط — GitHub Issues</strong><small>كل مهمة تبدأ بـ Issue ثم فرع <code>feature/...</code></small></div></li>
+    <li><div><strong>البرمجة — Git</strong><small>الكود في <code>app/</code> ويُدفع عبر Pull Request</small></div></li>
+    <li><div><strong>الاختبار — GitHub Actions</strong><small><code>npm test</code> يعمل تلقائيًا على كل PR</small></div></li>
+    <li><div><strong>البناء والإصدار — Docker + GHCR</strong><small>صورة جديدة عند كل دمج في <code>main</code></small></div></li>
+    <li><div><strong>تجهيز البنية — Terraform</strong><small>ينشئ الـ Namespace داخل Kubernetes: <code>terraform/</code></small></div></li>
+    <li><div><strong>النشر — Kubernetes</strong><small>3 نسخ مع فحص صحة وشفاء ذاتي: <code>k8s/</code> (حدّث الصفحة وانظر تغيّر اسم الـ Pod)</small></div></li>
+    <li><div><strong>تهيئة الخادم — Ansible</strong><small>يثبّت Docker ويشغّل الحاوية: <code>ansible/</code></small></div></li>
+    <li><div><strong>المراقبة — Prometheus + Grafana</strong><small>يقرأ <a href="/metrics"><code>/metrics</code></a> ويُنبّه عند التوقف: <code>monitoring/</code></small></div></li>
+  </ol>
+
+  <footer>نقاط النهاية: <a href="/health">/health</a> · <a href="/metrics">/metrics</a> · <a href="/api/info">/api/info</a></footer>
+</main>
+<script>
+  const $ = (id) => document.getElementById(id);
+  async function refresh() {
+    try {
+      const h = await (await fetch('/health')).json();
+      $('health').textContent = h.status; $('health').className = h.status === 'ok' ? 'ok' : 'bad';
+      const i = await (await fetch('/api/info')).json();
+      $('version').textContent = i.version; $('host').textContent = i.hostname;
+      $('uptime').textContent = i.uptimeSeconds; $('reqs').textContent = i.requests;
+    } catch (e) {
+      $('health').textContent = 'down'; $('health').className = 'bad';
+    }
+  }
+  refresh(); setInterval(refresh, 5000);
+</script>
+</body>
+</html>

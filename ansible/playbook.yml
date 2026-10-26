@@ -1,0 +1,23 @@
+- hosts: web
+  become: yes
+  tasks:
+    - name: Install Docker
+      apt:
+        name: docker.io
+        state: present
+        update_cache: yes
+
+    - name: Start and enable Docker
+      service:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Run the app container
+      community.docker.docker_container:
+        name: hello
+        image: ghcr.io/alaabashirsaijary/devops:latest
+        state: started
+        restart_policy: always
+        published_ports:
+          - "3000:3000"

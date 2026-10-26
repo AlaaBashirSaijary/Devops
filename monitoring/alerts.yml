@@ -1,0 +1,10 @@
+groups:
+  - name: hello
+    rules:
+      - alert: AppDown
+        expr: up{job="hello"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "التطبيق متوقف"
