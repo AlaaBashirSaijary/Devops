@@ -22,6 +22,10 @@
   .stages strong { display:block; }
   .stages small { color:var(--muted); }
   code { direction:ltr; unicode-bidi:embed; background:#0b1220; padding:1px 6px; border-radius:4px; font-size:13px; }
+  #scene { position:relative; height:clamp(300px,52vw,460px); margin-bottom:24px; border-radius:12px; overflow:hidden; background:#0b1220; }
+  #scene canvas { display:block; width:100%; height:100%; cursor:grab; touch-action:pan-y; }
+  #scene .hud { position:absolute; inset-inline:12px; top:10px; display:flex; justify-content:space-between; gap:8px; pointer-events:none; font-size:13px; color:var(--muted); }
+  #caption { color:var(--text); font-weight:600; }
   footer { margin-top:28px; color:var(--muted); font-size:13px; }
   a { color:var(--accent); }
 </style>
@@ -30,6 +34,10 @@
 <main>
   <h1>Hello DevOps</h1>
   <p class="sub">موقع صغير يمرّ على مراحل DevOps كلها، وهذه الصفحة نفسها هي الناتج النهائي لخط الإنتاج.</p>
+
+  <div id="scene" role="img" aria-label="مصنع ثلاثي الأبعاد: الكود يعبر مراحل DevOps الثمانية على سير ناقل">
+    <div class="hud"><span id="caption">...</span><span>اسحب للتدوير</span></div>
+  </div>
 
   <section class="status" aria-label="الحالة الحية">
     <div class="stat"><span>الصحة</span><b id="health">...</b></div>
@@ -52,8 +60,142 @@
 
   <footer>نقاط النهاية: <a href="/health">/health</a> · <a href="/metrics">/metrics</a> · <a href="/api/info">/api/info</a></footer>
 </main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
-  const $ = (id) => document.getElementById(id);
+// 3D factory: code packages ride a conveyor through the 8 DevOps stations.
+(function () {
+  const box = document.getElementById('scene');
+  if (!window.THREE) { box.hidden = true; return; }
+  const STAGES = [
+    { ar: 'تخطيط', en: 'GitHub Issues', c: 0xa78bfa },
+    { ar: 'برمجة', en: 'Git', c: 0xfb923c },
+    { ar: 'اختبار', en: 'GitHub Actions', c: 0xfacc15 },
+    { ar: 'بناء', en: 'Docker', c: 0x38bdf8 },
+    { ar: 'بنية', en: 'Terraform', c: 0x818cf8 },
+    { ar: 'نشر', en: 'Kubernetes', c: 0x4ade80 },
+    { ar: 'تهيئة', en: 'Ansible', c: 0xf87171 },
+    { ar: 'مراقبة', en: 'Prometheus', c: 0x2dd4bf },
+  ];
+  const GAP = 4, X0 = -14, START = -17.5, END = 17.5, SPEED = 2.2;
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const speed = reduced ? SPEED * 0.25 : SPEED;
+
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  box.appendChild(renderer.domElement);
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x0b1220);
+  scene.fog = new THREE.Fog(0x0b1220, 30, 70);
+  const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 200);
+  scene.add(new THREE.AmbientLight(0xffffff, 0.95));
+  const sun = new THREE.DirectionalLight(0xffffff, 0.8);
+  sun.position.set(-8, 14, 10);
+  scene.add(sun);
+  scene.add(new THREE.GridHelper(70, 70, 0x334155, 0x1e293b));
+
+  const mat = (c, extra) => new THREE.MeshStandardMaterial(Object.assign({ color: c, roughness: 0.6 }, extra));
+  const add = (geo, m, x, y, z, parent) => { const o = new THREE.Mesh(geo, m); o.position.set(x, y, z); (parent || scene).add(o); return o; };
+
+  // conveyor belt + moving ticks
+  add(new THREE.BoxGeometry(37, 0.3, 2), mat(0x1f2937), 0, 0.15, 0);
+  const tickGeo = new THREE.BoxGeometry(0.12, 0.02, 1.8), tickMat = mat(0x475569);
+  const ticks = [];
+  for (let x = START; x <= END; x += 1.5) ticks.push(add(tickGeo, tickMat, x, 0.31, 0));
+
+  function label(s) {
+    const cv = document.createElement('canvas'); cv.width = 256; cv.height = 128;
+    const g = cv.getContext('2d');
+    g.textAlign = 'center';
+    g.fillStyle = '#e2e8f0'; g.font = 'bold 54px system-ui, Tahoma, sans-serif'; g.fillText(s.ar, 128, 62);
+    g.fillStyle = '#94a3b8'; g.font = '26px system-ui, sans-serif'; g.fillText(s.en, 128, 104);
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cv), transparent: true }));
+    sp.scale.set(3.6, 1.8, 1);
+    return sp;
+  }
+
+  // stations: arch over the belt, a status lamp and a label
+  const stations = STAGES.map((s, i) => {
+    const x = X0 + i * GAP, g = new THREE.Group();
+    g.position.x = x; scene.add(g);
+    const m = mat(s.c, { emissive: s.c, emissiveIntensity: 0.15 });
+    add(new THREE.BoxGeometry(0.45, 2.6, 0.45), m, 0, 1.3, 1.3, g);
+    add(new THREE.BoxGeometry(0.45, 2.6, 0.45), m, 0, 1.3, -1.3, g);
+    add(new THREE.BoxGeometry(0.45, 0.45, 3.2), m, 0, 2.7, 0, g);
+    const lamp = add(new THREE.SphereGeometry(0.35, 16, 12), mat(s.c, { emissive: s.c, emissiveIntensity: 0.2 }), 0, 3.4, 0, g);
+    const sp = label(s); sp.position.set(0, 5, 0); g.add(sp);
+    return { x, lamp, level: 0.2 };
+  });
+  // monitor station gets a spinning ring
+  const ring = add(new THREE.TorusGeometry(0.9, 0.08, 8, 32), mat(STAGES[7].c, { emissive: STAGES[7].c, emissiveIntensity: 0.6 }), stations[7].x, 3.4, 0);
+
+  // packages (the code) -> they change colour & shape as they move through stages
+  const pkgGeo = new THREE.BoxGeometry(1, 1, 1);
+  let pkgs = [], spawn = 0;
+  function spawnPkg() {
+    const m = mat(0xe2e8f0, { emissive: 0x000000 });
+    const o = new THREE.Mesh(pkgGeo, m); o.position.set(START, 0.8, 0); scene.add(o); pkgs.push(o);
+  }
+
+  const caption = document.getElementById('caption');
+  const target = new THREE.Color();
+  let last = performance.now();
+  function frame(now) {
+    const dt = Math.min((now - last) / 1000, 0.1); last = now;
+    spawn -= dt; if (spawn <= 0) { spawnPkg(); spawn = 2.4; }
+    const active = stations.map(() => 0); let shown = -1;
+    pkgs.forEach((p) => {
+      p.position.x += speed * dt; p.rotation.y += dt * 0.6;
+      let idx = -1; stations.forEach((s, i) => { if (p.position.x >= s.x) idx = i; });
+      if (idx >= 0) {
+        target.setHex(STAGES[idx].c); p.material.color.lerp(target, 0.12);
+        p.scale.lerp(idx >= 3 ? new THREE.Vector3(1.5, 0.9, 0.9) : new THREE.Vector3(0.9, 0.9, 0.9), 0.1); // container after Docker build
+      } else p.scale.set(0.9, 0.9, 0.9);
+      stations.forEach((s, i) => { if (Math.abs(p.position.x - s.x) < 1.3) { active[i] = 1; shown = i; } });
+    });
+    pkgs = pkgs.filter((p) => { if (p.position.x > END) { scene.remove(p); p.material.dispose(); return false; } return true; });
+    stations.forEach((s, i) => { s.level += (active[i] * 1.6 + 0.2 - s.level) * 0.15; s.lamp.material.emissiveIntensity = s.level; });
+    ticks.forEach((t) => { t.position.x += speed * dt; if (t.position.x > END) t.position.x = START; });
+    ring.rotation.x += dt * 1.5; ring.rotation.y += dt;
+    if (shown >= 0) caption.textContent = 'الآن: ' + STAGES[shown].ar + ' — ' + STAGES[shown].en;
+    else if (!pkgs.length || pkgs[pkgs.length - 1].position.x < X0) caption.textContent = 'كود جديد يدخل خط الإنتاج';
+    place(); renderer.render(scene, camera);
+    requestAnimationFrame(frame);
+  }
+
+  // camera: drag to orbit, wheel to zoom
+  let yaw = 0.35, pitch = 0.5, dist = 30, zoom = 1, drag = null, moved = false;
+  function place() {
+    const d = dist * zoom;
+    camera.position.set(Math.sin(yaw) * Math.cos(pitch) * d, Math.sin(pitch) * d + 1, Math.cos(yaw) * Math.cos(pitch) * d);
+    camera.lookAt(0, 1.5, 0);
+  }
+  function resize() {
+    const w = box.clientWidth, h = box.clientHeight;
+    renderer.setSize(w, h); camera.aspect = w / h; camera.updateProjectionMatrix();
+    const hfov = 2 * Math.atan(Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2) * camera.aspect);
+    const narrow = camera.aspect < 1.2;
+    if (!moved) yaw = narrow ? 0.9 : 0.35; // on phones view along the belt so it fills the height
+    dist = Math.max(22, (narrow ? 13 : 15) / Math.tan(hfov / 2));
+  }
+  const cv = renderer.domElement;
+  cv.addEventListener('pointerdown', (e) => { drag = { x: e.clientX, y: e.clientY }; cv.setPointerCapture(e.pointerId); cv.style.cursor = 'grabbing'; });
+  cv.addEventListener('pointermove', (e) => {
+    if (!drag) return;
+    moved = true;
+    yaw -= (e.clientX - drag.x) * 0.006; pitch = Math.min(1.3, Math.max(0.1, pitch + (e.clientY - drag.y) * 0.004));
+    drag = { x: e.clientX, y: e.clientY };
+  });
+  const end = () => { drag = null; cv.style.cursor = 'grab'; };
+  cv.addEventListener('pointerup', end); cv.addEventListener('pointercancel', end);
+  cv.addEventListener('wheel', (e) => { e.preventDefault(); zoom = Math.min(1.6, Math.max(0.5, zoom + e.deltaY * 0.001)); }, { passive: false });
+  addEventListener('resize', resize);
+  resize();
+  for (let x = START; x < 6; x += 2.4 * speed) { spawnPkg(); pkgs[pkgs.length - 1].position.x = x; } // pre-fill so the belt isn't empty
+  requestAnimationFrame(frame);
+})();
+</script>
+<script>
+  const $ =(id) => document.getElementById(id);
   // On GitHub Pages there is no Node server, so show a static view instead of "down".
   const isStatic = location.hostname.endsWith('.github.io');
   async function refresh() {
