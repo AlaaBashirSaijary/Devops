@@ -54,7 +54,15 @@
 </main>
 <script>
   const $ = (id) => document.getElementById(id);
+  // On GitHub Pages there is no Node server, so show a static view instead of "down".
+  const isStatic = location.hostname.endsWith('.github.io');
   async function refresh() {
+    if (isStatic) {
+      ['health', 'version', 'host', 'uptime', 'reqs'].forEach((id) => { $(id).textContent = '—'; });
+      $('health').textContent = 'نسخة ثابتة (GitHub Pages)';
+      document.querySelector('footer').hidden = true;
+      return;
+    }
     try {
       const h = await (await fetch('/health')).json();
       $('health').textContent = h.status; $('health').className = h.status === 'ok' ? 'ok' : 'bad';
