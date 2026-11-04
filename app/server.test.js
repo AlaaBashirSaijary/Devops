@@ -26,4 +26,5 @@ test('GET /api/info returns version and hostname', async () => {
   const body = await (await fetch(`${base}/api/info`)).json();
   assert.ok(body.version);
   assert.ok(body.hostname);
+  assert.strictEqual(body.environment, process.env.APP_ENV || 'local');
 });

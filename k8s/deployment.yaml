@@ -16,6 +16,9 @@ spec:
       containers:
         - name: web
           image: ghcr.io/alaabashirsaijary/devops:latest
+          env:
+            - name: APP_ENV
+              value: staging
           ports:
             - containerPort: 3000
           readinessProbe:

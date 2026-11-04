@@ -41,6 +41,7 @@
 
   <section class="status" aria-label="الحالة الحية">
     <div class="stat"><span>الصحة</span><b id="health">...</b></div>
+    <div class="stat"><span>البيئة</span><b id="env">...</b></div>
     <div class="stat"><span>الإصدار</span><b id="version">...</b></div>
     <div class="stat"><span>اسم الـ Pod / الخادم</span><b id="host">...</b></div>
     <div class="stat"><span>مدة التشغيل (ث)</span><b id="uptime">...</b></div>
@@ -203,6 +204,7 @@
   async function refresh() {
     if (isStatic) {
       ['health', 'version', 'host', 'uptime', 'reqs'].forEach((id) => { $(id).textContent = '—'; });
+      $('env').textContent = 'live (الإنتاج)';
       $('health').textContent = 'نسخة ثابتة (GitHub Pages)';
       document.querySelector('footer').hidden = true;
       $('deck-link').hidden = false;
@@ -212,6 +214,7 @@
       const h = await (await fetch('/health')).json();
       $('health').textContent = h.status; $('health').className = h.status === 'ok' ? 'ok' : 'bad';
       const i = await (await fetch('/api/info')).json();
+      $('env').textContent = i.environment;
       $('version').textContent = i.version; $('host').textContent = i.hostname;
       $('uptime').textContent = i.uptimeSeconds; $('reqs').textContent = i.requests;
     } catch (e) {

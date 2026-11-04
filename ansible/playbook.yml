@@ -1,17 +1,21 @@
 - hosts: web
   become: yes
+  vars:
+    install_docker: true   # CI runners already have Docker: run with -e install_docker=false
   tasks:
     - name: Install Docker
       apt:
         name: docker.io
         state: present
         update_cache: yes
+      when: install_docker | bool
 
     - name: Start and enable Docker
       service:
         name: docker
         state: started
         enabled: yes
+      when: install_docker | bool
 
     - name: Run the app container
       community.docker.docker_container:
@@ -19,5 +23,7 @@
         image: ghcr.io/alaabashirsaijary/devops:latest
         state: started
         restart_policy: always
+        env:
+          APP_ENV: staging
         published_ports:
           - "3000:3000"

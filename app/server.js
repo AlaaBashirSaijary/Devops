@@ -21,6 +21,7 @@ const server = http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     return res.end(JSON.stringify({
       version: VERSION,
+      environment: process.env.APP_ENV || 'local',
       hostname: os.hostname(),
       uptimeSeconds: Math.round((Date.now() - startedAt) / 1000),
       requests,

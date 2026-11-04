@@ -80,5 +80,17 @@ docker compose -f docker-compose.monitoring.yml up -d
 - Grafana: http://localhost:3001 (admin / admin) ← أضف Data source من نوع Prometheus بالعنوان `http://prometheus:9090`
 - أوقف التطبيق وانتظر دقيقة لترى التنبيه `AppDown` في تبويب Alerts.
 
+## البيئات: الاختبار (Staging) ثم الإنتاج (Live)
+عند كل دمج في `main` يشغّل `.github/workflows/ci.yml` هذا التسلسل على خوادم GitHub نفسها، فلا تحتاج مساحة ولا إنترنت قويًا على جهازك:
+
+| المرحلة في الـ Workflow | البيئة | ما الذي يُنفَّذ فعليًا |
+|---|---|---|
+| `test` | — | `npm test` |
+| `build-and-push` | — | بناء صورة Docker ودفعها إلى GHCR |
+| `staging` | **اختبار** (cluster مؤقت بـ kind) | Terraform ينشئ الـ Namespace، Kubernetes ينشر 3 نسخ ثم 5 ويُصلح نفسه بعد حذف Pod، Ansible يجهّز الخادم مرتين (`changed=0` في الثانية)، Prometheus يقرأ `/metrics` ويحمّل تنبيه `AppDown` |
+| `pages` | **إنتاج** (GitHub Pages) | لا يُنشر إلا إذا نجحت بيئة الاختبار |
+
+التطبيق يعرض اسم البيئة (`staging` أو `live`) في لوحة الحالة وفي `/api/info`، وتفاصيل كل خطوة تظهر في تبويب Actions وفي ملخص الـ run.
+
 ## الدورة تتكرر
 ما تراه في المراقبة يتحول إلى Issue جديد في التخطيط، وهكذا تكتمل حلقة DevOps.
