@@ -58,6 +58,8 @@
     <li><div><strong>المراقبة — Prometheus + Grafana</strong><small>يقرأ <a href="/metrics"><code>/metrics</code></a> ويُنبّه عند التوقف: <code>monitoring/</code></small></div></li>
   </ol>
 
+  <p id="deck-link" hidden><a href="presentation/">فتح العرض التقديمي (الشرائح) ←</a></p>
+
   <footer>نقاط النهاية: <a href="/health">/health</a> · <a href="/metrics">/metrics</a> · <a href="/api/info">/api/info</a></footer>
 </main>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -203,6 +205,7 @@
       ['health', 'version', 'host', 'uptime', 'reqs'].forEach((id) => { $(id).textContent = '—'; });
       $('health').textContent = 'نسخة ثابتة (GitHub Pages)';
       document.querySelector('footer').hidden = true;
+      $('deck-link').hidden = false;
       return;
     }
     try {
