@@ -20,11 +20,11 @@ cd Devops
 ```bash
 docker build -t hello-devops .          # يبني الصورة من Dockerfile
 docker images hello-devops              # الصورة = القالب
-docker run -d --name a -p 3000:3000 hello-devops   # حاوية 1
-docker run -d --name b -p 3001:3000 hello-devops   # حاوية 2 من الصورة نفسها
+docker run -d --name app1 -p 3000:3000 hello-devops   # حاوية 1
+docker run -d --name app2 -p 3001:3000 hello-devops   # حاوية 2 من الصورة نفسها
 docker ps                               # حاويتان من صورة واحدة
 curl localhost:3000/api/info ; curl localhost:3001/api/info
-docker rm -f a b
+docker rm -f app1 app2
 ```
 
 ## 2) Kubernetes — cluster محلي داخل Docker
