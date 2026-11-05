@@ -21,19 +21,27 @@
   #tools button { width:46px; height:46px; border-radius:12px; border:1px solid #334155; background:rgba(30,41,59,.85); display:grid; place-items:center; cursor:pointer; padding:0; backdrop-filter:blur(6px); transition:transform .15s, border-color .15s; }
   #tools button:hover, #tools button:focus-visible, #tools button.on { transform:translateY(-3px); border-color:var(--tool); outline:none; }
   #tools img { width:26px; height:26px; }
-  #info { position:fixed; inset-inline:12px; bottom:78px; max-width:380px; margin-inline:auto; background:rgba(30,41,59,.95); border:1px solid var(--tool); border-radius:16px; padding:16px 18px; display:flex; gap:14px; align-items:center; box-shadow:0 10px 40px rgba(0,0,0,.5); backdrop-filter:blur(8px); animation:pop .18s ease-out; }
+  #info { position:fixed; inset-inline:12px; bottom:78px; max-width:520px; max-height:calc(100vh - 150px); overflow:auto; margin-inline:auto; background:rgba(30,41,59,.97); border:1px solid var(--tool); border-radius:16px; padding:16px 18px; display:grid; grid-template-columns:64px 1fr; gap:6px 14px; box-shadow:0 10px 40px rgba(0,0,0,.5); animation:pop .18s ease-out; }
   #info[hidden] { display:none; }
-  #info .logo { flex:none; width:64px; height:64px; border-radius:16px; background:#0b1220; border:2px solid var(--tool); display:grid; place-items:center; }
+  #info > * { grid-column:1 / -1; }
+  #info .logo { grid-column:1; grid-row:1; width:64px; height:64px; border-radius:16px; background:#0b1220; border:2px solid var(--tool); display:grid; place-items:center; }
   #info .logo img { width:38px; height:38px; }
+  #info .head { grid-column:2; grid-row:1; align-self:center; }
   #info b { display:block; font-size:20px; }
   #info .step { color:var(--tool); font-size:13px; font-weight:600; }
-  #info p { margin:4px 0 0; color:var(--muted); font-size:14px; line-height:1.5; }
+  #info p { margin:0; color:var(--text); font-size:14px; line-height:1.6; }
+  #info h2 { margin:10px 0 0; font-size:13px; color:var(--tool); }
+  #info ol { margin:0; padding:0; list-style:none; display:grid; gap:8px; }
+  #info li span { display:block; color:var(--muted); font-size:13px; }
+  #info li code { display:block; direction:ltr; text-align:left; white-space:pre-wrap; background:#0b1220; border-radius:8px; padding:6px 10px; font-size:12.5px; color:#e2e8f0; user-select:all; }
+  #info .file { color:var(--muted); font-size:13px; }
+  #info .file a { direction:ltr; unicode-bidi:embed; }
   #info .x { position:absolute; top:6px; inset-inline-end:10px; background:none; border:0; color:var(--muted); font-size:20px; cursor:pointer; }
   @media (max-width:520px) {
     #tools { gap:5px; padding-inline:6px; flex-wrap:nowrap; }
     #tools button { width:38px; height:38px; border-radius:10px; }
     #tools img { width:22px; height:22px; }
-    #info { bottom:70px; }
+    #info { bottom:62px; max-height:calc(100vh - 130px); }
   }
   #deck-link { position:fixed; bottom:2px; inset-inline-start:12px; font-size:12px; }
   a { color:var(--accent); }
@@ -51,7 +59,13 @@
 <div id="info" hidden>
   <button class="x" id="close" aria-label="إغلاق">×</button>
   <div class="logo"><img id="i-logo" alt=""></div>
-  <div><span class="step" id="i-step"></span><b id="i-name"></b><p id="i-desc"></p></div>
+  <div class="head"><span class="step" id="i-step"></span><b id="i-name"></b></div>
+  <p id="i-desc"></p>
+  <h2>عمليًا في المشروع</h2>
+  <ol id="i-steps"></ol>
+  <h2>داخل خط الإنتاج</h2>
+  <p id="i-ci"></p>
+  <p class="file">الملف: <a id="i-file" target="_blank" rel="noopener"></a></p>
 </div>
 
 <nav id="tools" aria-label="أدوات DevOps"></nav>
@@ -60,15 +74,40 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 (function () {
+  const REPO = 'https://github.com/AlaaBashirSaijary/Devops/blob/main/';
   const TOOLS = [
-    { slug: 'github',        name: 'GitHub Issues',  ar: '١ · التخطيط',  c: '#a78bfa', d: 'كل مهمة تبدأ بـ Issue ثم فرع جديد.' },
-    { slug: 'git',           name: 'Git',            ar: '٢ · البرمجة',  c: '#fb923c', d: 'الكود يُحفظ في فروع ويُدفع عبر Pull Request.' },
-    { slug: 'githubactions', name: 'GitHub Actions', ar: '٣ · الاختبار', c: '#facc15', d: 'يشغّل الاختبارات تلقائيًا عند كل تعديل.' },
-    { slug: 'docker',        name: 'Docker',         ar: '٤ · البناء',   c: '#38bdf8', d: 'يغلّف التطبيق في حاوية تعمل في أي مكان.' },
-    { slug: 'terraform',     name: 'Terraform',      ar: '٥ · البنية',   c: '#818cf8', d: 'ينشئ البنية التحتية من ملفات كود.' },
-    { slug: 'kubernetes',    name: 'Kubernetes',     ar: '٦ · النشر',    c: '#4ade80', d: 'ينشر عدة نسخ ويعيد تشغيل أي نسخة تتعطل.' },
-    { slug: 'ansible',       name: 'Ansible',        ar: '٧ · التهيئة',  c: '#f87171', d: 'يجهّز الخادم بنفس الخطوات في كل مرة.' },
-    { slug: 'prometheus',    name: 'Prometheus',     ar: '٨ · المراقبة', c: '#2dd4bf', d: 'يقرأ مقاييس التطبيق وينبّه عند التوقف.' },
+    { slug: 'github', name: 'GitHub Issues', ar: '١ · التخطيط', c: '#a78bfa',
+      d: 'نكتب المهمة قبل الكود: Issue واحد لكل تغيير، وكل Issue له فرع خاص.',
+      steps: [['افتح Issue من المتصفح', 'Issues ← New issue ← «إضافة مسار /health»'], ['أنشئ فرعًا للمهمة', 'git checkout -b feature/health']],
+      file: 'README.md', ci: 'عند فتح Pull Request يشغّل GitHub الاختبارات تلقائيًا ويربطها بالـ Issue.' },
+    { slug: 'git', name: 'Git', ar: '٢ · البرمجة', c: '#fb923c',
+      d: 'نعدّل الكود في فرع منفصل ثم نرسله عبر Pull Request ليُراجَع قبل الدمج.',
+      steps: [['احفظ التعديل', 'git add . && git commit -m "feat: add /health"'], ['ارفعه إلى GitHub', 'git push -u origin feature/health'], ['جرّب محليًا', 'npm start   # http://localhost:3000']],
+      file: 'app/server.js', ci: 'الدمج في main هو الذي يُطلق خط الإنتاج كله.' },
+    { slug: 'githubactions', name: 'GitHub Actions', ar: '٣ · الاختبار', c: '#facc15',
+      d: 'روبوت على خوادم GitHub ينفّذ الخطوات نفسها عند كل Push دون تدخل منك.',
+      steps: [['شغّل الاختبار محليًا', 'npm test   # 3 اختبارات'], ['أو شاهده على GitHub', 'تبويب Actions ← آخر run']],
+      file: '.github/workflows/ci.yml', ci: 'الترتيب: test ← build-and-push ← staging ← live. إن فشلت خطوة يتوقف كل ما بعدها.' },
+    { slug: 'docker', name: 'Docker', ar: '٤ · البناء', c: '#38bdf8',
+      d: 'الصورة (Image) قالب جاهز للتطبيق ومكتباته. الحاوية (Container) نسخة تعمل من ذلك القالب. من صورة واحدة تشغّل حاويات كثيرة.',
+      steps: [['١. Dockerfile يصف الصورة', 'FROM node:20-alpine\nCOPY app ./app\nCMD ["node","app/server.js"]'], ['٢. ابنِ الصورة', 'docker build -t hello-devops .'], ['٣. شغّل حاوية منها', 'docker run -p 3000:3000 hello-devops'], ['٤. شغّل حاوية ثانية من الصورة نفسها', 'docker run -p 3001:3000 hello-devops'], ['٥. شاهد الحاويات', 'docker ps']],
+      file: 'Dockerfile', ci: 'يبني الـ Workflow الصورة عند كل دمج ويدفعها إلى ghcr.io/alaabashirsaijary/devops بوسم رقم الـ commit.' },
+    { slug: 'terraform', name: 'Terraform', ar: '٥ · البنية', c: '#818cf8',
+      d: 'نكتب البنية المطلوبة كملف (مثلًا namespace) وTerraform ينفّذها وينقل الواقع إلى ما كتبناه.',
+      steps: [['حمّل المزوّد', 'terraform init'], ['اعرض ما سيتغير', 'terraform plan'], ['نفّذه', 'terraform apply']],
+      file: 'terraform/main.tf', ci: 'في staging ينشئ Terraform الـ namespace باسم hello-devops داخل Cluster مؤقت.' },
+    { slug: 'kubernetes', name: 'Kubernetes', ar: '٦ · النشر', c: '#4ade80',
+      d: 'يشغّل 3 نسخ من الحاوية (Pods) ويفحص صحتها، وإن مات Pod ينشئ بديلًا فورًا.',
+      steps: [['انشر', 'kubectl apply -f k8s/'], ['شاهد الـ Pods', 'kubectl get pods -n hello-devops'], ['جرّب الشفاء الذاتي', 'kubectl delete pod <اسم> -n hello-devops'], ['كبّر العدد', 'kubectl scale deployment/hello --replicas=5 -n hello-devops'], ['تراجع عن نسخة', 'kubectl rollout undo deployment/hello -n hello-devops']],
+      file: 'k8s/deployment.yaml', ci: 'يُنفَّذ كل هذا فعلًا في staging: 3 نسخ ثم 5، وحذف Pod وانتظار عودته.' },
+    { slug: 'ansible', name: 'Ansible', ar: '٧ · التهيئة', c: '#f87171',
+      d: 'يجهّز خادمًا بخطوات مكتوبة في playbook، وإعادة التشغيل لا تغيّر شيئًا إن كان كل شيء جاهزًا.',
+      steps: [['شغّل الـ playbook', 'ansible-playbook -i inventory.ini playbook.yml'], ['شغّله مرة ثانية', '# النتيجة: changed=0  (Idempotent)']],
+      file: 'ansible/playbook.yml', ci: 'في staging يعمل مرتين، ويفشل الـ pipeline إن لم تكن الثانية changed=0.' },
+    { slug: 'prometheus', name: 'Prometheus', ar: '٨ · المراقبة', c: '#2dd4bf',
+      d: 'يسحب أرقام التطبيق من /metrics كل بضع ثوانٍ، وينبّه إذا توقف.',
+      steps: [['شغّل المراقبة', 'docker compose -f docker-compose.monitoring.yml up -d'], ['استعلم عن الزيارات', 'http_requests_total   # http://localhost:9090'], ['اختبر التنبيه', 'أوقف التطبيق وانتظر دقيقة ← AppDown']],
+      file: 'monitoring/alerts.yml', ci: 'في staging يتأكد الـ pipeline أن up{job="hello"} = 1 وأن قاعدة AppDown محمّلة.' },
   ];
   const ICON_URL = (s) => 'https://cdn.jsdelivr.net/npm/simple-icons@11.14.0/icons/' + s + '.svg';
 
@@ -90,6 +129,15 @@
     document.getElementById('i-step').textContent = t.ar;
     document.getElementById('i-name').textContent = t.name;
     document.getElementById('i-desc').textContent = t.d;
+    const st = document.getElementById('i-steps'); st.textContent = '';
+    t.steps.forEach(([cap, cmd]) => {
+      const li = document.createElement('li'), c = document.createElement('span'), k = document.createElement('code');
+      c.textContent = cap; k.textContent = cmd; li.append(c, k); st.appendChild(li);
+    });
+    document.getElementById('i-ci').textContent = t.ci;
+    document.getElementById('i-file').href = REPO + t.file;
+    document.getElementById('i-file').textContent = t.file;
+    info.scrollTop = 0;
     iLogo.removeAttribute('src');
     icons[t.slug].then((u) => { if (selected === i && u) iLogo.src = u; });
     info.hidden = false;
