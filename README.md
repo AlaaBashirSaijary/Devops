@@ -16,6 +16,8 @@ Git + حساب GitHub، Node.js 20+، Docker Desktop، kubectl، kind (أو تف
 | `ansible/` | تهيئة الخادم (Ansible) |
 | `monitoring/` + `docker-compose.monitoring.yml` | المراقبة (Prometheus + Grafana) |
 
+> **مساحة جهازك ضيقة؟** جرّب كل الأدوات في المتصفح عبر GitHub Codespaces: اتبع [LAB.md](LAB.md).
+
 ## 1) التخطيط (Plan)
 المستودع موجود عندك: `AlaaBashirSaijary/Devops`، ثم افتح Issue بعنوان «إضافة مسار /health» وضع له Label. هذه هي مهمتك الأولى.
 
