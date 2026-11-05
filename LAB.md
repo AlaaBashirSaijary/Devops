@@ -4,6 +4,18 @@
 
 **التشغيل:** من صفحة المستودع اضغط `Code` ← `Codespaces` ← `Create codespace on main`. انتظر دقائق حتى ينتهي الإعداد، ثم افتح الـ Terminal وانسخ الأوامر بالترتيب. (الحساب المجاني يمنح ساعات شهرية؛ احذف الـ Codespace عند الانتهاء.)
 
+## بديل مجاني إن انتهى رصيد Codespaces
+مواقع مختبرات مجانية في المتصفح (تسجيل دخول بحساب GitHub أو Google، والجلسة مؤقتة نحو ساعة):
+- **Killercoda — Ubuntu:** https://killercoda.com/playgrounds/scenario/ubuntu ← لأقسام Docker وAnsible وPrometheus.
+- **Killercoda — Kubernetes:** https://killercoda.com/playgrounds/scenario/kubernetes ← لأقسام Terraform وKubernetes (الـ cluster جاهز، فتجاوز أمر `kind create cluster`).
+
+في كل جهاز نفّذ أولًا:
+```bash
+curl -fsSL https://raw.githubusercontent.com/AlaaBashirSaijary/Devops/main/lab-setup.sh | bash
+cd Devops
+```
+ثم تابع الأقسام أدناه. إن كان جهازًا بلا Docker (Kubernetes) فخطوات Docker وAnsible وPrometheus نفّذها في جهاز Ubuntu.
+
 ## 1) Docker — صورة وحاويات
 ```bash
 docker build -t hello-devops .          # يبني الصورة من Dockerfile
